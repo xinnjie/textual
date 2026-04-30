@@ -14,6 +14,7 @@
     var model: TextSelectionModel
     var exclusionRects: [CGRect]
     var openURL: OpenURLAction
+    var selectionActions: [TextualSelectionAction]
 
     override var acceptsFirstResponder: Bool { true }
     override var isFlipped: Bool { true }
@@ -24,11 +25,13 @@
     init(
       model: TextSelectionModel,
       exclusionRects: [CGRect],
-      openURL: OpenURLAction
+      openURL: OpenURLAction,
+      selectionActions: [TextualSelectionAction]
     ) {
       self.model = model
       self.exclusionRects = exclusionRects
       self.openURL = openURL
+      self.selectionActions = selectionActions
 
       super.init(frame: .zero)
       self.wantsLayer = false
@@ -44,11 +47,11 @@
         $0.contains(localPoint)
       }
 
-      if isExcluded {
+      guard isExcluded == false else {
         return nil
-      } else {
-        return super.hitTest(point)
       }
+
+      return super.hitTest(point)
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -202,6 +205,21 @@
           NSLocalizedString("Copy", bundle: .main, comment: "")
         }
 
+      for action in selectionActions {
+        let item = NSMenuItem(
+          title: action.title,
+          action: #selector(performTextualSelectionAction(_:)),
+          keyEquivalent: ""
+        )
+        item.target = self
+        item.representedObject = action.id
+        contextMenu.addItem(item)
+      }
+
+      if selectionActions.isEmpty == false {
+        contextMenu.addItem(.separator())
+      }
+
       contextMenu.addItem(
         .init(
           title: shareActionTitle,
@@ -287,11 +305,29 @@
       pasteboard.setString(formatter.plainText(), forType: .string)
       pasteboard.setString(formatter.html(), forType: .html)
     }
+
+    @objc private func performTextualSelectionAction(_ sender: NSMenuItem) {
+      guard let actionID = sender.representedObject as? String else { return }
+      guard let action = selectionActions.first(where: { $0.id == actionID }) else { return }
+      guard let selectedRange = model.selectedRange, !selectedRange.isCollapsed else { return }
+      guard let payload = model.textualSelectionPayload(for: selectedRange, in: bounds) else {
+        return
+      }
+
+      Task { @MainActor in
+        action.perform(with: payload)
+      }
+    }
   }
 
   extension NSTextInteractionView: NSUserInterfaceValidations {
     func validateUserInterfaceItem(_ item: any NSValidatedUserInterfaceItem) -> Bool {
       switch item.action {
+      case #selector(performTextualSelectionAction(_:)):
+        guard selectionActions.isEmpty == false, let selectedRange = model.selectedRange else {
+          return false
+        }
+        return !selectedRange.isCollapsed
       case #selector(selectAll(_:)):
         return model.hasText
       case #selector(copy(_:)):

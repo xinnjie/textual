@@ -14,6 +14,7 @@ import SwiftUI
 struct TextSelectionInteraction: ViewModifier {
   #if TEXTUAL_ENABLE_TEXT_SELECTION
     @Environment(\.textSelection) private var textSelection
+    @Environment(\.textSelectionActions) private var textSelectionActions
     @Environment(TextSelectionCoordinator.self) private var coordinator: TextSelectionCoordinator?
 
     @State private var model = TextSelectionModel()
@@ -30,7 +31,12 @@ struct TextSelectionInteraction: ViewModifier {
                 model.setLayoutCollection(layoutCollection)
               }
           }
-          .modifier(PlatformTextSelectionInteraction(model: model))
+          .modifier(
+            PlatformTextSelectionInteraction(
+              model: model,
+              selectionActions: textSelectionActions
+            )
+          )
       } else {
         content
       }

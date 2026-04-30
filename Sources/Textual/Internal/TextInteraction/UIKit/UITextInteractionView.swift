@@ -20,6 +20,7 @@
     var model: TextSelectionModel
     var exclusionRects: [CGRect]
     var openURL: OpenURLAction
+    var selectionActions: [TextualSelectionAction]
 
     weak var inputDelegate: (any UITextInputDelegate)?
 
@@ -31,11 +32,13 @@
     init(
       model: TextSelectionModel,
       exclusionRects: [CGRect],
-      openURL: OpenURLAction
+      openURL: OpenURLAction,
+      selectionActions: [TextualSelectionAction]
     ) {
       self.model = model
       self.exclusionRects = exclusionRects
       self.openURL = openURL
+      self.selectionActions = selectionActions
       self.selectionInteraction = UITextInteraction(for: .nonEditable)
 
       super.init(frame: .zero)
@@ -59,7 +62,7 @@
 
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
       switch action {
-      case #selector(copy(_:)), #selector(share(_:)):
+      case #selector(copy(_:)), #selector(share(_:)), #selector(performTextualSelectionAction(_:)):
         return !(model.selectedRange?.isCollapsed ?? true)
       default:
         return false
@@ -82,6 +85,23 @@
           ]
         ]
       )
+    }
+
+    override func buildMenu(with builder: any UIMenuBuilder) {
+      super.buildMenu(with: builder)
+
+      guard selectionActions.isEmpty == false else { return }
+      guard let selectedRange = model.selectedRange, !selectedRange.isCollapsed else { return }
+
+      let commands = selectionActions.map { action in
+        UICommand(
+          title: action.title,
+          action: #selector(performTextualSelectionAction(_:)),
+          propertyList: action.id
+        )
+      }
+      let menu = UIMenu(title: "", options: .displayInline, children: commands)
+      builder.insertChild(menu, atStartOfMenu: .lookup)
     }
 
     private func setUp() {
@@ -113,6 +133,19 @@
         return
       }
       openURL(url)
+    }
+
+    @objc private func performTextualSelectionAction(_ sender: UICommand) {
+      guard let actionID = sender.propertyList as? String else { return }
+      guard let action = selectionActions.first(where: { $0.id == actionID }) else { return }
+      guard let selectedRange = model.selectedRange, !selectedRange.isCollapsed else { return }
+      guard let payload = model.textualSelectionPayload(for: selectedRange, in: bounds) else {
+        return
+      }
+
+      Task { @MainActor in
+        action.perform(with: payload)
+      }
     }
 
     @objc private func share(_ sender: Any?) {

@@ -14,14 +14,20 @@
 
   struct UIKitTextSelectionInteraction: ViewModifier {
     private let model: TextSelectionModel
+    private let selectionActions: [TextualSelectionAction]
 
-    init(model: TextSelectionModel) {
+    init(model: TextSelectionModel, selectionActions: [TextualSelectionAction]) {
       self.model = model
+      self.selectionActions = selectionActions
     }
 
     func body(content: Content) -> some View {
       content.overlayPreferenceValue(OverflowFrameKey.self) { frames in
-        UIKitTextInteractionOverlay(model: model, overflowFrames: frames)
+        UIKitTextInteractionOverlay(
+          model: model,
+          overflowFrames: frames,
+          selectionActions: selectionActions
+        )
       }
     }
   }

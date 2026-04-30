@@ -16,9 +16,11 @@
     @State private var cursorPushed = false
 
     private let model: TextSelectionModel
+    private let selectionActions: [TextualSelectionAction]
 
-    init(model: TextSelectionModel) {
+    init(model: TextSelectionModel, selectionActions: [TextualSelectionAction]) {
       self.model = model
+      self.selectionActions = selectionActions
     }
 
     func body(content: Content) -> some View {
@@ -27,10 +29,14 @@
         // text selection background and selected attachment dimming
         .environment(model)
         .overlayPreferenceValue(OverflowFrameKey.self) { frames in
-          AppKitTextInteractionOverlay(model: model, overflowFrames: frames)
-            .onContinuousHover { phase in
-              updateCursor(for: phase, model: model)
-            }
+          AppKitTextInteractionOverlay(
+            model: model,
+            overflowFrames: frames,
+            selectionActions: selectionActions
+          )
+          .onContinuousHover { phase in
+            updateCursor(for: phase, model: model)
+          }
         }
     }
 
