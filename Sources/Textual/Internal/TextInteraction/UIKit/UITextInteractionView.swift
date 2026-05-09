@@ -92,14 +92,19 @@
 
       guard selectionActions.isEmpty == false else { return }
       guard let selectedRange = model.selectedRange, !selectedRange.isCollapsed else { return }
+      guard let payload = model.textualSelectionPayload(for: selectedRange, in: bounds) else {
+        return
+      }
 
-      let commands = selectionActions.map { action in
-        UICommand(
-          title: action.title,
+      let commands = selectionActions.compactMap { action -> UICommand? in
+        guard let title = action.title(for: payload) else { return nil }
+        return UICommand(
+          title: title,
           action: #selector(performTextualSelectionAction(_:)),
           propertyList: action.id
         )
       }
+      guard commands.isEmpty == false else { return }
       let menu = UIMenu(title: "", options: .displayInline, children: commands)
       builder.insertChild(menu, atStartOfMenu: .lookup)
     }

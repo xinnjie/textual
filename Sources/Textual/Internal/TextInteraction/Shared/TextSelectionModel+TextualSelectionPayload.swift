@@ -9,22 +9,27 @@
       let selectedText = normalizedSelectionText(text(in: selectedRange))
       guard selectedText.isEmpty == false else { return nil }
 
-      let contextText = normalizedSelectionText(contextText(for: selectedRange))
+      let contextRange = blockRange(for: selectedRange.start)
+      let contextText = normalizedSelectionText(
+        contextRange.map { text(in: $0) } ?? text(in: selectedRange)
+      )
       let rects = selectionRects(for: selectedRange).map(\.rect)
 
       return TextualSelectionPayload(
         selectedText: selectedText,
         contextText: contextText.isEmpty ? selectedText : contextText,
+        selectionRange: globalRange(for: selectedRange),
+        contextRange: contextRange.flatMap { globalRange(for: $0) },
+        blockOrdinal: contextRange?.start.indexPath.layout,
         attachmentAnchor: textualSelectionAnchor(for: rects, in: bounds)
       )
     }
 
-    private func contextText(for selectedRange: TextRange) -> String {
-      guard let blockRange = blockRange(for: selectedRange.start) else {
-        return text(in: selectedRange)
-      }
-
-      return text(in: blockRange)
+    private func globalRange(for range: TextRange) -> Range<Int>? {
+      let start = offset(from: startPosition, to: range.start)
+      let end = offset(from: startPosition, to: range.end)
+      guard start <= end else { return nil }
+      return start..<end
     }
   }
 

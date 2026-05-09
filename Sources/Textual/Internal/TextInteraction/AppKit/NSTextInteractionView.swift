@@ -205,18 +205,24 @@
           NSLocalizedString("Copy", bundle: .main, comment: "")
         }
 
+      let payload = model.textualSelectionPayload(for: selectedRange, in: bounds)
+      var addedSelectionAction = false
       for action in selectionActions {
+        guard let payload, let title = action.title(for: payload) else {
+          continue
+        }
         let item = NSMenuItem(
-          title: action.title,
+          title: title,
           action: #selector(performTextualSelectionAction(_:)),
           keyEquivalent: ""
         )
         item.target = self
         item.representedObject = action.id
         contextMenu.addItem(item)
+        addedSelectionAction = true
       }
 
-      if selectionActions.isEmpty == false {
+      if addedSelectionAction {
         contextMenu.addItem(.separator())
       }
 
@@ -327,7 +333,14 @@
         guard selectionActions.isEmpty == false, let selectedRange = model.selectedRange else {
           return false
         }
-        return !selectedRange.isCollapsed
+        guard !selectedRange.isCollapsed,
+          let payload = model.textualSelectionPayload(for: selectedRange, in: bounds)
+        else {
+          return false
+        }
+        return selectionActions.contains { action in
+          action.title(for: payload) != nil
+        }
       case #selector(selectAll(_:)):
         return model.hasText
       case #selector(copy(_:)):

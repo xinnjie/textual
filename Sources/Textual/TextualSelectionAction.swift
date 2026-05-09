@@ -23,15 +23,24 @@
   public struct TextualSelectionPayload: Equatable, Sendable {
     public let selectedText: String
     public let contextText: String
+    public let selectionRange: Range<Int>?
+    public let contextRange: Range<Int>?
+    public let blockOrdinal: Int?
     public let attachmentAnchor: TextualSelectionAnchor?
 
     public init(
       selectedText: String,
       contextText: String,
+      selectionRange: Range<Int>? = nil,
+      contextRange: Range<Int>? = nil,
+      blockOrdinal: Int? = nil,
       attachmentAnchor: TextualSelectionAnchor? = nil
     ) {
       self.selectedText = selectedText
       self.contextText = contextText
+      self.selectionRange = selectionRange
+      self.contextRange = contextRange
+      self.blockOrdinal = blockOrdinal
       self.attachmentAnchor = attachmentAnchor
     }
   }
@@ -40,6 +49,7 @@
     public let id: String
     public let title: String
 
+    private let titleResolver: @MainActor (TextualSelectionPayload) -> String?
     private let handler: @MainActor (TextualSelectionPayload) -> Void
 
     public init(
@@ -49,7 +59,25 @@
     ) {
       self.id = id
       self.title = title
+      self.titleResolver = { _ in title }
       self.handler = handler
+    }
+
+    public init(
+      id: String,
+      fallbackTitle: String,
+      title: @MainActor @escaping (TextualSelectionPayload) -> String?,
+      handler: @MainActor @escaping (TextualSelectionPayload) -> Void
+    ) {
+      self.id = id
+      self.title = fallbackTitle
+      self.titleResolver = title
+      self.handler = handler
+    }
+
+    @MainActor
+    public func title(for payload: TextualSelectionPayload) -> String? {
+      titleResolver(payload)
     }
 
     @MainActor
