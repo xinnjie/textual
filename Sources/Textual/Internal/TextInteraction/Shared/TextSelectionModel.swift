@@ -157,6 +157,10 @@
       layoutCollection.characterRange(at: point)
     }
 
+    func characterRange(containing point: CGPoint) -> TextRange? {
+      layoutCollection.characterRange(containing: point)
+    }
+
     func blockStart(for position: TextPosition) -> TextPosition? {
       layoutCollection.blockStart(for: position)
     }

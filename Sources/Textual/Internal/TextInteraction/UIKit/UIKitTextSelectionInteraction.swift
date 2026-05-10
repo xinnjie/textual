@@ -16,7 +16,11 @@
     private let model: TextSelectionModel
     private let selectionActions: [TextualSelectionAction]
 
-    init(model: TextSelectionModel, selectionActions: [TextualSelectionAction]) {
+    init(
+      model: TextSelectionModel,
+      selectionActions: [TextualSelectionAction],
+      hoverAction _: TextualHoverAction?
+    ) {
       self.model = model
       self.selectionActions = selectionActions
     }

@@ -14,15 +14,18 @@
     private let model: TextSelectionModel
     private let overflowFrames: [CGRect]
     private let selectionActions: [TextualSelectionAction]
+    private let hoverAction: TextualHoverAction?
 
     init(
       model: TextSelectionModel,
       overflowFrames: [CGRect],
-      selectionActions: [TextualSelectionAction]
+      selectionActions: [TextualSelectionAction],
+      hoverAction: TextualHoverAction?
     ) {
       self.model = model
       self.overflowFrames = overflowFrames
       self.selectionActions = selectionActions
+      self.hoverAction = hoverAction
     }
 
     func makeNSView(context: Context) -> NSTextInteractionView {
@@ -30,7 +33,8 @@
         model: model,
         exclusionRects: overflowFrames,
         openURL: context.environment.openURL,
-        selectionActions: selectionActions
+        selectionActions: selectionActions,
+        hoverAction: hoverAction
       )
     }
 
@@ -39,6 +43,7 @@
       nsView.exclusionRects = overflowFrames
       nsView.openURL = context.environment.openURL
       nsView.selectionActions = selectionActions
+      nsView.hoverAction = hoverAction
     }
   }
 #endif

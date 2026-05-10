@@ -17,10 +17,16 @@
 
     private let model: TextSelectionModel
     private let selectionActions: [TextualSelectionAction]
+    private let hoverAction: TextualHoverAction?
 
-    init(model: TextSelectionModel, selectionActions: [TextualSelectionAction]) {
+    init(
+      model: TextSelectionModel,
+      selectionActions: [TextualSelectionAction],
+      hoverAction: TextualHoverAction?
+    ) {
       self.model = model
       self.selectionActions = selectionActions
+      self.hoverAction = hoverAction
     }
 
     func body(content: Content) -> some View {
@@ -32,7 +38,8 @@
           AppKitTextInteractionOverlay(
             model: model,
             overflowFrames: frames,
-            selectionActions: selectionActions
+            selectionActions: selectionActions,
+            hoverAction: hoverAction
           )
           .onContinuousHover { phase in
             updateCursor(for: phase, model: model)
@@ -60,5 +67,6 @@
         }
       }
     }
+
   }
 #endif

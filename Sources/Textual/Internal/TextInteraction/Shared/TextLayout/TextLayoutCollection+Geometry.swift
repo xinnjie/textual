@@ -123,6 +123,57 @@
       return TextRange(start: start, end: end)
     }
 
+    func characterRange(containing point: CGPoint) -> TextRange? {
+      guard let layoutIndex = layouts.firstIndex(where: { $0.frame.contains(point) }) else {
+        return nil
+      }
+      let layout = layouts[layoutIndex]
+
+      let localPoint = CGPoint(
+        x: point.x - layout.origin.x,
+        y: point.y - layout.origin.y
+      )
+
+      guard
+        let lineIndex = layout.lines.firstIndex(where: { line in
+          line.typographicBounds.contains(localPoint)
+        })
+      else {
+        return nil
+      }
+
+      let line = layout.lines[lineIndex]
+      guard
+        let runIndex = line.runs.firstIndex(where: { run in
+          run.typographicBounds.contains(localPoint)
+        })
+      else {
+        return nil
+      }
+
+      let run = line.runs[runIndex]
+      guard
+        let runSliceIndex = run.slices.firstIndex(where: { slice in
+          slice.typographicBounds.contains(localPoint)
+        })
+      else {
+        return nil
+      }
+
+      let start = TextPosition(
+        indexPath: .init(
+          runSlice: runSliceIndex, run: runIndex, line: lineIndex, layout: layoutIndex),
+        affinity: .downstream
+      )
+      let end = TextPosition(
+        indexPath: .init(
+          runSlice: runSliceIndex, run: runIndex, line: lineIndex, layout: layoutIndex),
+        affinity: .upstream
+      )
+
+      return TextRange(start: start, end: end)
+    }
+
     func isPositionAtBlockBoundary(_ position: TextPosition) -> Bool {
       if position
         == TextPosition(

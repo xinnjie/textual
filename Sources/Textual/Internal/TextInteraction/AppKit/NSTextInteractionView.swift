@@ -15,23 +15,27 @@
     var exclusionRects: [CGRect]
     var openURL: OpenURLAction
     var selectionActions: [TextualSelectionAction]
+    var hoverAction: TextualHoverAction?
 
     override var acceptsFirstResponder: Bool { true }
     override var isFlipped: Bool { true }
 
     private var dragStart: TextPosition?
     private var selectionAnchor: TextPosition?
+    private var hoverTrackingArea: NSTrackingArea?
 
     init(
       model: TextSelectionModel,
       exclusionRects: [CGRect],
       openURL: OpenURLAction,
-      selectionActions: [TextualSelectionAction]
+      selectionActions: [TextualSelectionAction],
+      hoverAction: TextualHoverAction?
     ) {
       self.model = model
       self.exclusionRects = exclusionRects
       self.openURL = openURL
       self.selectionActions = selectionActions
+      self.hoverAction = hoverAction
 
       super.init(frame: .zero)
       self.wantsLayer = false
@@ -52,6 +56,33 @@
       }
 
       return super.hitTest(point)
+    }
+
+    override func updateTrackingAreas() {
+      super.updateTrackingAreas()
+
+      if let hoverTrackingArea {
+        removeTrackingArea(hoverTrackingArea)
+      }
+
+      let trackingArea = NSTrackingArea(
+        rect: .zero,
+        options: [.mouseMoved, .mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect],
+        owner: self
+      )
+      addTrackingArea(trackingArea)
+      hoverTrackingArea = trackingArea
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+      let location = convert(event.locationInWindow, from: nil)
+      hoverAction?(model.textualHoverPayload(at: location, in: bounds))
+      super.mouseMoved(with: event)
+    }
+
+    override func mouseExited(with event: NSEvent) {
+      hoverAction?(nil)
+      super.mouseExited(with: event)
     }
 
     override func mouseDown(with event: NSEvent) {

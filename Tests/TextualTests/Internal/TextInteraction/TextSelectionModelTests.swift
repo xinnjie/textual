@@ -578,6 +578,46 @@
     }
 
     @Test
+    func characterRangeContainingPointOutsideText() throws {
+      // given
+      let model = try TextSelectionModel(fixtureName: "two-paragraphs-bidi")
+
+      // when
+      let range = model.characterRange(containing: CGPoint(x: -1, y: -1))
+
+      // then
+      #expect(range == nil)
+    }
+
+    @Test
+    func textualHoverPayloadIncludesHoverRangeContextRangeAndBlockOrdinal() throws {
+      // given
+      let model = try TextSelectionModel(fixtureName: "two-paragraphs-bidi")
+      let point = CGPoint(x: 30.98, y: 82.31)
+
+      // when
+      let payload = try #require(model.textualHoverPayload(at: point, in: .zero))
+
+      // then
+      #expect(payload.contextText.isEmpty == false)
+      #expect(payload.hoverRange != nil)
+      #expect(payload.contextRange != nil)
+      #expect(payload.blockOrdinal == 1)
+    }
+
+    @Test
+    func textualHoverPayloadReturnsNilOutsideText() throws {
+      // given
+      let model = try TextSelectionModel(fixtureName: "two-paragraphs-bidi")
+
+      // when
+      let payload = model.textualHoverPayload(at: CGPoint(x: -1, y: -1), in: .zero)
+
+      // then
+      #expect(payload == nil)
+    }
+
+    @Test
     func blockRange() throws {
       // given
       let model = try TextSelectionModel(fixtureName: "two-paragraphs-bidi")

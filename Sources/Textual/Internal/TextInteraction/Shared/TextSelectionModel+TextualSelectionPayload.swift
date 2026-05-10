@@ -25,6 +25,32 @@
       )
     }
 
+    func textualHoverPayload(
+      at point: CGPoint,
+      in bounds: CGRect
+    ) -> TextualHoverPayload? {
+      guard
+        let characterRange = characterRange(containing: point),
+        let contextRange = blockRange(for: characterRange.start)
+      else {
+        return nil
+      }
+
+      let contextText = normalizedSelectionText(text(in: contextRange))
+      guard contextText.isEmpty == false else {
+        return nil
+      }
+
+      let rects = selectionRects(for: contextRange).map(\.rect)
+      return TextualHoverPayload(
+        contextText: contextText,
+        hoverRange: globalRange(for: characterRange),
+        contextRange: globalRange(for: contextRange),
+        blockOrdinal: contextRange.start.indexPath.layout,
+        attachmentAnchor: textualSelectionAnchor(for: rects, in: bounds)
+      )
+    }
+
     private func globalRange(for range: TextRange) -> Range<Int>? {
       let start = offset(from: startPosition, to: range.start)
       let end = offset(from: startPosition, to: range.end)

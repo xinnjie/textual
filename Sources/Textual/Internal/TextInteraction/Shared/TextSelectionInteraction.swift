@@ -15,6 +15,7 @@ struct TextSelectionInteraction: ViewModifier {
   #if TEXTUAL_ENABLE_TEXT_SELECTION
     @Environment(\.textSelection) private var textSelection
     @Environment(\.textSelectionActions) private var textSelectionActions
+    @Environment(\.textHoverAction) private var textHoverAction
     @Environment(TextSelectionCoordinator.self) private var coordinator: TextSelectionCoordinator?
 
     @State private var model = TextSelectionModel()
@@ -34,7 +35,8 @@ struct TextSelectionInteraction: ViewModifier {
           .modifier(
             PlatformTextSelectionInteraction(
               model: model,
-              selectionActions: textSelectionActions
+              selectionActions: textSelectionActions,
+              hoverAction: textHoverAction
             )
           )
       } else {

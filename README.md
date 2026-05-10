@@ -158,6 +158,42 @@ StructuredText(
 Scrollable regions like code blocks handle their own selection contexts. When you select text in a scrollable area,
 any document-level selection clears automatically, and vice versa.
 
+You can add custom actions to the textual selection UI with `textual.textSelectionActions(_:)`.
+Each action receives a `TextualSelectionPayload` containing the selected text, the surrounding block text, optional
+character ranges, and a normalized anchor for the rendered selection bounds:
+
+```swift
+StructuredText(markdown: content)
+  .textual.textSelection(.enabled)
+  .textual.textSelectionActions([
+    TextualSelectionAction(
+      id: "print",
+      title: "Print"
+    ) { payload in
+      print(payload.selectedText)
+    },
+  ])
+```
+
+Return `nil` from a dynamic title resolver to hide an action for a particular selection.
+
+### Text Hover
+On macOS, you can observe pointer hover over selectable text with `textual.textHoverAction(_:)`.
+The callback receives a `TextualHoverPayload` while the pointer is over text and `nil` when the hover target clears:
+
+```swift
+StructuredText(markdown: content)
+  .textual.textSelection(.enabled)
+  .textual.textHoverAction { payload in
+    guard let payload else {
+      print("No hovered text")
+      return
+    }
+
+    print(payload.contextText)
+  }
+```
+
 ### Styling
 
 Textual provides a flexible styling system that lets you customize every aspect of structured text rendering. At the
@@ -202,11 +238,11 @@ Here's a practical example, a custom heading style that adds a subtle underline 
 ```swift
 struct CustomHeadingStyle: StructuredText.HeadingStyle {
   private static let fontScales: [CGFloat] = [2, 1.5, 1.25, 1, 0.875, 0.85]
-  
+
   func makeBody(configuration: Configuration) -> some View {
     let headingLevel = min(configuration.headingLevel, 6)
     let fontScale = Self.fontScales[headingLevel - 1]
-    
+
     VStack(alignment: .leading, spacing: 0) {
       configuration.label
         .textual.fontScale(fontScale)
