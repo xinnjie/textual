@@ -159,8 +159,8 @@ Scrollable regions like code blocks handle their own selection contexts. When yo
 any document-level selection clears automatically, and vice versa.
 
 You can add custom actions to the textual selection UI with `textual.textSelectionActions(_:)`.
-Each action receives a `TextualSelectionPayload` containing the selected text, the surrounding block text, optional
-character ranges, and a normalized anchor for the rendered selection bounds:
+Each action receives a `TextualSelectionPayload` containing the selected text fragment, the surrounding text block,
+optional character ranges, and normalized anchors for the rendered bounds:
 
 ```swift
 StructuredText(markdown: content)
@@ -170,7 +170,8 @@ StructuredText(markdown: content)
       id: "print",
       title: "Print"
     ) { payload in
-      print(payload.selectedText)
+      print(payload.selection.text)
+      print(payload.block.text)
     },
   ])
 ```
@@ -190,7 +191,8 @@ StructuredText(markdown: content)
       return
     }
 
-    print(payload.contextText)
+    print(payload.target.text)
+    print(payload.block.text)
   }
 ```
 

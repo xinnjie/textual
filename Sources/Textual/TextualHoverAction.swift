@@ -3,47 +3,22 @@
 
   /// Information passed to a custom hover action.
   ///
-  /// `TextualHoverPayload` describes the text block currently under the pointer and optional
-  /// location metadata that callers can use to map the hover target back to rendered text.
+  /// `TextualHoverPayload` describes the text fragment currently under the pointer and the
+  /// rendered text block that contains it.
   public struct TextualHoverPayload: Equatable, Sendable {
-    /// The containing block text after whitespace and newline runs have been collapsed to single
-    /// spaces.
-    public let contextText: String
+    /// The text fragment under the pointer.
+    public let target: TextualTextFragment
 
-    /// The character range under the pointer in the full text model, expressed as
-    /// `NSAttributedString` character offsets.
-    public let hoverRange: Range<Int>?
-
-    /// The containing block range in the full text model, expressed as `NSAttributedString`
-    /// character offsets.
-    public let contextRange: Range<Int>?
-
-    /// The zero-based ordinal of the containing layout block.
-    public let blockOrdinal: Int?
-
-    /// The normalized anchor for the rendered hover bounds within the text view.
-    public let attachmentAnchor: TextualSelectionAnchor?
+    /// The rendered text block containing the hover target.
+    public let block: TextualTextBlock
 
     /// Creates a hover payload.
-    ///
-    /// - Parameters:
-    ///   - contextText: The containing block text for the hover target.
-    ///   - hoverRange: The hovered range in the full text model.
-    ///   - contextRange: The containing block range in the full text model.
-    ///   - blockOrdinal: The zero-based ordinal of the containing layout block.
-    ///   - attachmentAnchor: The normalized rendered bounds for the hover target.
     public init(
-      contextText: String,
-      hoverRange: Range<Int>? = nil,
-      contextRange: Range<Int>? = nil,
-      blockOrdinal: Int? = nil,
-      attachmentAnchor: TextualSelectionAnchor? = nil
+      target: TextualTextFragment,
+      block: TextualTextBlock
     ) {
-      self.contextText = contextText
-      self.hoverRange = hoverRange
-      self.contextRange = contextRange
-      self.blockOrdinal = blockOrdinal
-      self.attachmentAnchor = attachmentAnchor
+      self.target = target
+      self.block = block
     }
   }
 

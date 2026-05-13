@@ -590,19 +590,59 @@
     }
 
     @Test
-    func textualHoverPayloadIncludesHoverRangeContextRangeAndBlockOrdinal() throws {
+    func textualSelectionPayloadIncludesSelectionAndBlock() throws {
+      // given
+      let model = try TextSelectionModel(fixtureName: "two-paragraphs-bidi")
+      let start = try #require(model.position(from: model.startPosition, offset: 10))
+      let end = try #require(model.position(from: model.startPosition, offset: 16))
+      let range = TextRange(start: start, end: end)
+
+      // when
+      let payload = try #require(
+        model.textualSelectionPayload(
+          for: range,
+          in: CGRect(x: 0, y: 0, width: 300, height: 100)
+        )
+      )
+
+      // then
+      #expect(payload.selection.text == "sample")
+      #expect(payload.selection.range == 10..<16)
+      #expect(payload.selection.anchor != nil)
+      #expect(payload.block.text == "This is a sample paragraph with a link and ⁧مرحبا⁩.")
+      #expect(payload.block.range == 0..<51)
+      #expect(payload.block.index == 0)
+      #expect(payload.block.anchor != nil)
+    }
+
+    @Test
+    func textualHoverPayloadIncludesTargetAndBlock() throws {
       // given
       let model = try TextSelectionModel(fixtureName: "two-paragraphs-bidi")
       let point = CGPoint(x: 30.98, y: 82.31)
+      let characterRange = try #require(model.characterRange(containing: point))
+      let targetText = model.text(in: characterRange)
+        .components(separatedBy: .whitespacesAndNewlines)
+        .filter { $0.isEmpty == false }
+        .joined(separator: " ")
 
       // when
-      let payload = try #require(model.textualHoverPayload(at: point, in: .zero))
+      let payload = try #require(
+        model.textualHoverPayload(
+          at: point,
+          in: CGRect(x: 0, y: 0, width: 300, height: 120)
+        )
+      )
 
       // then
-      #expect(payload.contextText.isEmpty == false)
-      #expect(payload.hoverRange != nil)
-      #expect(payload.contextRange != nil)
-      #expect(payload.blockOrdinal == 1)
+      #expect(payload.target.text == targetText)
+      #expect(payload.target.text.isEmpty == false)
+      #expect(payload.target.range != nil)
+      #expect(payload.target.anchor != nil)
+      #expect(payload.block.text.isEmpty == false)
+      #expect(payload.block.range != nil)
+      #expect(payload.block.index == 1)
+      #expect(payload.block.anchor != nil)
     }
 
     @Test

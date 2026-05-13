@@ -13,15 +13,19 @@
       let contextText = normalizedSelectionText(
         contextRange.map { text(in: $0) } ?? text(in: selectedRange)
       )
-      let rects = selectionRects(for: selectedRange).map(\.rect)
+      let selectionRects = selectionRects(for: selectedRange).map(\.rect)
 
       return TextualSelectionPayload(
-        selectedText: selectedText,
-        contextText: contextText.isEmpty ? selectedText : contextText,
-        selectionRange: globalRange(for: selectedRange),
-        contextRange: contextRange.flatMap { globalRange(for: $0) },
-        blockOrdinal: contextRange?.start.indexPath.layout,
-        attachmentAnchor: textualSelectionAnchor(for: rects, in: bounds)
+        selection: TextualTextFragment(
+          text: selectedText,
+          range: globalRange(for: selectedRange),
+          anchor: textualTextAnchor(for: selectionRects, in: bounds)
+        ),
+        block: textualTextBlock(
+          for: contextRange,
+          fallbackText: contextText.isEmpty ? selectedText : contextText,
+          in: bounds
+        )
       )
     }
 
@@ -41,13 +45,16 @@
         return nil
       }
 
-      let rects = selectionRects(for: contextRange).map(\.rect)
       return TextualHoverPayload(
-        contextText: contextText,
-        hoverRange: globalRange(for: characterRange),
-        contextRange: globalRange(for: contextRange),
-        blockOrdinal: contextRange.start.indexPath.layout,
-        attachmentAnchor: textualSelectionAnchor(for: rects, in: bounds)
+        target: TextualTextFragment(
+          text: normalizedSelectionText(text(in: characterRange)),
+          range: globalRange(for: characterRange),
+          anchor: textualTextAnchor(
+            for: selectionRects(for: characterRange).map(\.rect),
+            in: bounds
+          )
+        ),
+        block: textualTextBlock(for: contextRange, fallbackText: contextText, in: bounds)
       )
     }
 
@@ -56,6 +63,24 @@
       let end = offset(from: startPosition, to: range.end)
       guard start <= end else { return nil }
       return start..<end
+    }
+
+    private func textualTextBlock(
+      for range: TextRange?,
+      fallbackText: String,
+      in bounds: CGRect
+    ) -> TextualTextBlock {
+      guard let range else {
+        return TextualTextBlock(text: fallbackText)
+      }
+
+      let text = normalizedSelectionText(text(in: range))
+      return TextualTextBlock(
+        text: text.isEmpty ? fallbackText : text,
+        range: globalRange(for: range),
+        index: range.start.indexPath.layout,
+        anchor: textualTextAnchor(for: selectionRects(for: range).map(\.rect), in: bounds)
+      )
     }
   }
 
@@ -66,10 +91,10 @@
       .joined(separator: " ")
   }
 
-  private func textualSelectionAnchor(
+  private func textualTextAnchor(
     for rects: [CGRect],
     in bounds: CGRect
-  ) -> TextualSelectionAnchor? {
+  ) -> TextualTextAnchor? {
     guard bounds.width > 0, bounds.height > 0 else { return nil }
 
     let selectionRect = rects.reduce(CGRect.null) { partialResult, rect in
@@ -78,7 +103,7 @@
 
     guard selectionRect.isNull == false else { return nil }
 
-    return TextualSelectionAnchor(
+    return TextualTextAnchor(
       x: Double(selectionRect.midX / bounds.width),
       y: Double(selectionRect.midY / bounds.height),
       width: Double(selectionRect.width / bounds.width),

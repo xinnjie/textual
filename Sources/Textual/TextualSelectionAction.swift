@@ -1,24 +1,24 @@
 #if TEXTUAL_ENABLE_TEXT_SELECTION
   import SwiftUI
 
-  /// A normalized rectangle that identifies where selected text is rendered.
+  /// A normalized rectangle that identifies where text is rendered.
   ///
-  /// `TextualSelectionAnchor` stores the center point and optional size of a rendered selection
-  /// relative to the text view bounds. All values are clamped to the `0...1` range.
-  public struct TextualSelectionAnchor: Equatable, Hashable, Sendable {
-    /// The normalized horizontal center of the rendered selection bounds.
+  /// `TextualTextAnchor` stores the center point and optional size of rendered text relative to
+  /// the text view bounds. All values are clamped to the `0...1` range.
+  public struct TextualTextAnchor: Equatable, Hashable, Sendable {
+    /// The normalized horizontal center of the rendered text bounds.
     public let x: Double
 
-    /// The normalized vertical center of the rendered selection bounds.
+    /// The normalized vertical center of the rendered text bounds.
     public let y: Double
 
-    /// The normalized width of the rendered selection bounds, when available.
+    /// The normalized width of the rendered text bounds, when available.
     public let width: Double?
 
-    /// The normalized height of the rendered selection bounds, when available.
+    /// The normalized height of the rendered text bounds, when available.
     public let height: Double?
 
-    /// Creates a normalized selection anchor.
+    /// Creates a normalized text anchor.
     public init(x: Double, y: Double, width: Double? = nil, height: Double? = nil) {
       self.x = min(max(x, 0), 1)
       self.y = min(max(y, 0), 1)
@@ -32,48 +32,77 @@
     }
   }
 
+  /// A concrete text fragment involved in a text interaction.
+  public struct TextualTextFragment: Equatable, Sendable {
+    /// The fragment text after whitespace and newline runs have been collapsed to single spaces.
+    public let text: String
+
+    /// The fragment range in the full text model, expressed as `NSAttributedString` character
+    /// offsets.
+    public let range: Range<Int>?
+
+    /// The normalized anchor for the rendered fragment bounds within the text view.
+    public let anchor: TextualTextAnchor?
+
+    /// Creates a text fragment.
+    public init(
+      text: String,
+      range: Range<Int>? = nil,
+      anchor: TextualTextAnchor? = nil
+    ) {
+      self.text = text
+      self.range = range
+      self.anchor = anchor
+    }
+  }
+
+  /// A rendered text block that contains an interaction target.
+  public struct TextualTextBlock: Equatable, Sendable {
+    /// The block text after whitespace and newline runs have been collapsed to single spaces.
+    public let text: String
+
+    /// The block range in the full text model, expressed as `NSAttributedString` character
+    /// offsets.
+    public let range: Range<Int>?
+
+    /// The zero-based index of the containing layout block.
+    public let index: Int?
+
+    /// The normalized anchor for the rendered block bounds within the text view.
+    public let anchor: TextualTextAnchor?
+
+    /// Creates a text block.
+    public init(
+      text: String,
+      range: Range<Int>? = nil,
+      index: Int? = nil,
+      anchor: TextualTextAnchor? = nil
+    ) {
+      self.text = text
+      self.range = range
+      self.index = index
+      self.anchor = anchor
+    }
+  }
+
   /// Information passed to a custom selection action.
   ///
-  /// `TextualSelectionPayload` describes the selected text, the surrounding block used as
-  /// context, and optional location metadata that callers can use to map the payload back to
-  /// the rendered text.
+  /// `TextualSelectionPayload` describes the selected text and the rendered text block that
+  /// contains it.
   public struct TextualSelectionPayload: Equatable, Sendable {
-    /// The selected text after whitespace and newline runs have been collapsed to single spaces.
-    public let selectedText: String
+    /// The selected text fragment.
+    public let selection: TextualTextFragment
 
-    /// The containing block text after whitespace and newline runs have been collapsed to single
-    /// spaces.
-    public let contextText: String
-
-    /// The selected range in the full text model, expressed as `NSAttributedString` character
-    /// offsets.
-    public let selectionRange: Range<Int>?
-
-    /// The containing block range in the full text model, expressed as `NSAttributedString`
-    /// offsets.
-    public let contextRange: Range<Int>?
-
-    /// The zero-based ordinal of the containing layout block.
-    public let blockOrdinal: Int?
-
-    /// The normalized anchor for the rendered selection bounds within the text view.
-    public let attachmentAnchor: TextualSelectionAnchor?
+    /// The rendered text block containing the selection.
+    public let block: TextualTextBlock
 
     /// Creates a selection payload.
     public init(
-      selectedText: String,
-      contextText: String,
-      selectionRange: Range<Int>? = nil,
-      contextRange: Range<Int>? = nil,
-      blockOrdinal: Int? = nil,
-      attachmentAnchor: TextualSelectionAnchor? = nil
+      selection: TextualTextFragment,
+      block: TextualTextBlock
     ) {
-      self.selectedText = selectedText
-      self.contextText = contextText
-      self.selectionRange = selectionRange
-      self.contextRange = contextRange
-      self.blockOrdinal = blockOrdinal
-      self.attachmentAnchor = attachmentAnchor
+      self.selection = selection
+      self.block = block
     }
   }
 
