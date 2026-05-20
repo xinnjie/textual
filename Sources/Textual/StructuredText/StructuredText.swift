@@ -88,15 +88,28 @@ import SwiftUI
 ///
 /// ### Images, links, and relative URLs
 ///
-/// If your Markdown includes relative image URLs or links, provide a `baseURL`. To render images,
-/// configure an attachment loader using the ``TextualNamespace/imageAttachmentLoader(_:)``
-/// modifier.
+/// If your Markdown includes relative image URLs or links, provide a `baseURL`. Textual renders
+/// Markdown images using the image renderer from ``TextualConfiguration``. The default renderer
+/// uses Textual's built-in loader; optional renderer packages can provide alternatives.
 ///
 /// ```swift
 /// let baseURL = URL(string: "https://example.com/repo/")!
 ///
 /// StructuredText(markdown: readme, baseURL: baseURL)
-///   .textual.imageAttachmentLoader(.image(relativeTo: baseURL))
+/// ```
+///
+/// To opt into Kingfisher-backed image loading, add the `TextualKingfisher` product and pass a
+/// renderer in the initializer:
+///
+/// ```swift
+/// import Textual
+/// import TextualKingfisher
+///
+/// StructuredText(
+///   markdown: readme,
+///   baseURL: baseURL,
+///   configuration: .init(imageRenderer: .kingfisher())
+/// )
 /// ```
 ///
 /// When you need to parse something other than Markdown, use ``init(_:parser:)`` with a custom
@@ -106,17 +119,23 @@ public struct StructuredText: View {
 
   private let markup: String
   private let parser: any MarkupParser
+  private let configuration: TextualConfiguration
 
   /// Creates a structured-text view by parsing `markup` with a custom parser.
   ///
   /// Use this initializer when you want to provide your own `MarkupParser` implementation.
-  public init(_ markup: String, parser: any MarkupParser) {
+  public init(
+    _ markup: String,
+    parser: any MarkupParser,
+    configuration: TextualConfiguration = .default
+  ) {
     self.markup = markup
     self.parser = parser
+    self.configuration = configuration
   }
 
   public var body: some View {
-    WithAttachments(attributedString) {
+    WithAttachments(attributedString, configuration: configuration) {
       BlockContent(content: $0)
         .modifier(TextSelectionInteraction())
         .modifier(TextSelectionCoordination())
@@ -144,6 +163,7 @@ extension StructuredText {
   ///   - markdown: The Markdown source to render.
   ///   - baseURL: A base URL used to resolve relative links and image URLs.
   ///   - syntaxExtensions: Custom syntax extensions applied after markdown parsing.
+  ///   - configuration: Rendering configuration, including the Markdown image renderer.
   ///
   /// Math expressions are supported when you include `.math` in `syntaxExtensions`:
   ///
@@ -156,14 +176,16 @@ extension StructuredText {
   public init(
     markdown: String,
     baseURL: URL? = nil,
-    syntaxExtensions: [AttributedStringMarkdownParser.SyntaxExtension] = []
+    syntaxExtensions: [AttributedStringMarkdownParser.SyntaxExtension] = [],
+    configuration: TextualConfiguration = .default
   ) {
     self.init(
       markdown,
       parser: .markdown(
         baseURL: baseURL,
         syntaxExtensions: syntaxExtensions
-      )
+      ),
+      configuration: configuration
     )
   }
 }

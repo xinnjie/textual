@@ -38,8 +38,9 @@ import SwiftUI
 /// )
 /// ```
 ///
-/// Images are decoded using the system image codecs. Supported formats typically include JPEG and
-/// PNG, animated GIF and APNG, WebP, and HEIC/HEICS.
+/// Images are rendered by the image renderer in ``TextualConfiguration``. The default renderer
+/// uses Textual's built-in loader and system image codecs. Optional renderer packages, such as
+/// `TextualKingfisher`, can provide alternative loading and caching behavior.
 ///
 /// Custom emoji can be defined and substituted using syntax extensions:
 ///
@@ -99,19 +100,25 @@ public struct InlineText: View {
 
   private let markup: String
   private let parser: any MarkupParser
+  private let configuration: TextualConfiguration
 
   /// Creates inline text from markup using the given ``MarkupParser`` implementation.
   ///
   /// - Parameters:
   ///   - markup: The markup string to parse and display.
   ///   - parser: The parser to use for converting markup to attributed content.
-  public init(_ markup: String, parser: any MarkupParser) {
+  public init(
+    _ markup: String,
+    parser: any MarkupParser,
+    configuration: TextualConfiguration = .default
+  ) {
     self.markup = markup
     self.parser = parser
+    self.configuration = configuration
   }
 
   public var body: some View {
-    WithAttachments(attributedString) {
+    WithAttachments(attributedString, configuration: configuration) {
       WithInlineStyle($0) {
         TextFragment($0)
           .modifier(TextSelectionInteraction())
@@ -136,17 +143,20 @@ extension InlineText {
   ///     being relative to this URL. If this value is `nil`, the initializer doesn’t resolve URLs.
   ///     The default is `nil`.
   ///   - syntaxExtensions: Custom syntax extensions applied after markdown parsing.
+  ///   - configuration: Rendering configuration, including the Markdown image renderer.
   public init(
     markdown: String,
     baseURL: URL? = nil,
-    syntaxExtensions: [AttributedStringMarkdownParser.SyntaxExtension] = []
+    syntaxExtensions: [AttributedStringMarkdownParser.SyntaxExtension] = [],
+    configuration: TextualConfiguration = .default
   ) {
     self.init(
       markdown,
       parser: .inlineMarkdown(
         baseURL: baseURL,
         syntaxExtensions: syntaxExtensions
-      )
+      ),
+      configuration: configuration
     )
   }
 }

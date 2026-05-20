@@ -12,9 +12,11 @@ let package = Package(
     .visionOS(.v2),
   ],
   products: [
-    .library(name: "Textual", targets: ["Textual"])
+    .library(name: "Textual", targets: ["Textual"]),
+    .library(name: "TextualKingfisher", targets: ["TextualKingfisher"]),
   ],
   dependencies: [
+    .package(url: "https://github.com/onevcat/Kingfisher.git", from: "8.0.0"),
     .package(url: "https://github.com/pointfreeco/swift-concurrency-extras", from: "1.3.1"),
     .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.18.7"),
     .package(url: "https://github.com/gonzalezreal/swiftui-math", from: "0.1.0"),
@@ -32,6 +34,13 @@ let package = Package(
       swiftSettings: [
         .define("TEXTUAL_ENABLE_LINKS", .when(platforms: [.macOS, .iOS, .watchOS, .visionOS])),
         .define("TEXTUAL_ENABLE_TEXT_SELECTION", .when(platforms: [.macOS, .iOS, .visionOS])),
+      ]
+    ),
+    .target(
+      name: "TextualKingfisher",
+      dependencies: [
+        "Textual",
+        .product(name: "Kingfisher", package: "Kingfisher"),
       ]
     ),
     .testTarget(

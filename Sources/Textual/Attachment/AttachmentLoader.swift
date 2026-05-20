@@ -5,11 +5,12 @@ import SwiftUI
 /// Textual uses attachment loaders to turn URLs (for example image links or custom emoji URLs)
 /// into concrete ``Attachment`` values.
 ///
-/// The default loaders fetch and decode images using Textual's built-in image loader. You can
-/// supply custom loaders using ``TextualNamespace/imageAttachmentLoader(_:)`` and
-/// ``TextualNamespace/emojiAttachmentLoader(_:)``.
+/// Custom emoji still use attachment loaders directly. Markdown images are configured with the
+/// image renderer in ``TextualConfiguration``; ``TextualNamespace/imageAttachmentLoader(_:)``
+/// remains available as a compatibility override.
 ///
-/// Here’s a common pattern when your markup uses relative image URLs:
+/// For existing code that uses image loader modifiers, relative image URLs can still be resolved
+/// by providing a base URL to ``TextualNamespace/imageAttachmentLoader(_:)``:
 ///
 /// ```swift
 /// StructuredText(
@@ -57,6 +58,6 @@ public protocol AttachmentLoader: Sendable {
 }
 
 extension EnvironmentValues {
-  @Entry var imageAttachmentLoader: any AttachmentLoader = .image()
-  @Entry var emojiAttachmentLoader: any AttachmentLoader = .emoji()
+  @Entry var imageAttachmentLoader: (any AttachmentLoader)?
+  @Entry var emojiAttachmentLoader: (any AttachmentLoader)?
 }

@@ -136,6 +136,9 @@ extension TextualNamespace where Base: View {
   }
 
   /// Sets the attachment loader used to resolve image attachments.
+  ///
+  /// Prefer configuring Markdown image rendering with ``TextualConfiguration`` when constructing
+  /// ``InlineText`` or ``StructuredText``. This modifier is retained as a compatibility override.
   public func imageAttachmentLoader(_ loader: some AttachmentLoader) -> some View {
     base.environment(\.imageAttachmentLoader, loader)
   }
