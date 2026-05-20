@@ -4,9 +4,9 @@ import UniformTypeIdentifiers
 extension StructuredText {
   /// A proxy for a rendered code block that custom code block styles can use.
   public struct CodeBlockProxy {
-    private let content: AttributedSubstring
+    private let content: AttributedString
 
-    internal init(_ content: AttributedSubstring) {
+    internal init(_ content: AttributedString) {
       self.content = content
     }
 
@@ -20,11 +20,11 @@ extension StructuredText {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
 
-        let formatter = Formatter(AttributedString(content))
+        let formatter = Formatter(content)
         pasteboard.setString(formatter.plainText(), forType: .string)
         pasteboard.setString(formatter.html(), forType: .html)
       #elseif TEXTUAL_ENABLE_TEXT_SELECTION && canImport(UIKit)
-        let formatter = Formatter(AttributedString(content))
+        let formatter = Formatter(content)
         UIPasteboard.general.setItems(
           [
             [

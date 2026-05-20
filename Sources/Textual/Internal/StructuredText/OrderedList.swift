@@ -14,9 +14,9 @@ extension StructuredText {
     @State private var markerWidth: CGFloat?
 
     private let intent: PresentationIntent.IntentType?
-    private let content: AttributedSubstring
+    private let content: AttributedString
 
-    init(intent: PresentationIntent.IntentType?, content: AttributedSubstring) {
+    init(intent: PresentationIntent.IntentType?, content: AttributedString) {
       self.intent = intent
       self.content = content
     }
@@ -30,7 +30,7 @@ extension StructuredText {
 
           OrderedListItem(
             intent: run.intent,
-            content: content[run.range],
+            content: AttributedString(content[run.range]),
             markerWidth: markerWidth
           )
         }
@@ -50,12 +50,12 @@ extension StructuredText {
     @Environment(\.orderedListMarker) private var orderedListMarker
 
     private let intent: PresentationIntent.IntentType?
-    private let content: AttributedSubstring
+    private let content: AttributedString
     private let markerWidth: CGFloat?
 
     init(
       intent: PresentationIntent.IntentType?,
-      content: AttributedSubstring,
+      content: AttributedString,
       markerWidth: CGFloat?
     ) {
       self.intent = intent

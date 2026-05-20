@@ -14,12 +14,12 @@ extension StructuredText {
     @State private var spacing = TableCell.Spacing()
 
     private let intent: PresentationIntent.IntentType?
-    private let content: AttributedSubstring
+    private let content: AttributedString
     private let columns: [PresentationIntent.TableColumn]
 
     init(
       intent: PresentationIntent.IntentType?,
-      content: AttributedSubstring,
+      content: AttributedString,
       columns: [PresentationIntent.TableColumn]
     ) {
       self.intent = intent
@@ -47,13 +47,13 @@ extension StructuredText {
       Grid(horizontalSpacing: spacing.horizontal, verticalSpacing: spacing.vertical) {
         ForEach(rowRuns.indices, id: \.self) { rowIndex in
           let rowRun = rowRuns[rowIndex]
-          let rowContent = content[rowRun.range]
+          let rowContent = AttributedString(content[rowRun.range])
           let columnRuns = rowContent.blockRuns(parent: rowRun.intent)
 
           GridRow {
             ForEach(columnRuns.indices, id: \.self) { columnIndex in
               let cellRun = columnRuns[columnIndex]
-              let cellContent = rowContent[cellRun.range]
+              let cellContent = AttributedString(rowContent[cellRun.range])
 
               TableCell(cellContent, row: rowIndex, column: columnIndex)
                 .gridColumnAlignment(alignment(for: columnIndex))

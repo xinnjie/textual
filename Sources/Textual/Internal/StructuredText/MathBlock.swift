@@ -5,9 +5,9 @@ extension StructuredText {
     @Environment(\.paragraphStyle) private var paragraphStyle
     @Environment(\.mathProperties) private var mathProperties
 
-    private let content: AttributedSubstring
+    private let content: AttributedString
 
-    init(_ content: AttributedSubstring) {
+    init(_ content: AttributedString) {
       self.content = content
     }
 
@@ -20,16 +20,17 @@ extension StructuredText {
 
       AnyView(resolvedStyle)
         .layoutValue(key: BlockAlignmentKey.self, value: mathProperties.textAlignment)
+        .preference(key: BlockAlignmentKey.self, value: mathProperties.textAlignment)
     }
 
     private var label: some View {
-      WithInlineStyle(AttributedString(content)) {
+      WithInlineStyle(content) {
         TextFragment($0)
       }
     }
 
     private var indentationLevel: Int {
-      content.presentationIntent?.indentationLevel ?? 0
+      content.runs.first?.presentationIntent?.indentationLevel ?? 0
     }
   }
 }

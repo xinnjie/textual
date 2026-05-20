@@ -4,9 +4,9 @@ extension StructuredText {
   struct Paragraph: View {
     @Environment(\.paragraphStyle) private var paragraphStyle
 
-    private let content: AttributedSubstring
+    private let content: AttributedString
 
-    init(_ content: AttributedSubstring) {
+    init(_ content: AttributedString) {
       self.content = content
     }
 
@@ -21,13 +21,13 @@ extension StructuredText {
     }
 
     private var label: some View {
-      WithInlineStyle(AttributedString(content)) {
+      WithInlineStyle(content) {
         TextFragment($0)
       }
     }
 
     private var indentationLevel: Int {
-      content.presentationIntent?.indentationLevel ?? 0
+      content.runs.first?.presentationIntent?.indentationLevel ?? 0
     }
   }
 }

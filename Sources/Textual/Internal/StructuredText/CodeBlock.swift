@@ -5,12 +5,14 @@ extension StructuredText {
     @Environment(\.highlighterTheme) private var highlighterTheme
     @Environment(\.codeBlockStyle) private var codeBlockStyle
 
-    private let content: AttributedSubstring
+    private let content: AttributedString
     private let languageHint: String?
 
-    init(_ content: AttributedSubstring, languageHint: String?) {
+    init(_ content: AttributedString, languageHint: String?) {
+      var content = content
       if let last = content.characters.indices.last, content.characters[last] == "\n" {
-        self.content = content[..<last]
+        content.removeSubrange(last..<content.endIndex)
+        self.content = content
       } else {
         self.content = content
       }
@@ -37,7 +39,7 @@ extension StructuredText {
     }
 
     private var indentationLevel: Int {
-      content.presentationIntent?.indentationLevel ?? 0
+      content.runs.first?.presentationIntent?.indentationLevel ?? 0
     }
   }
 }

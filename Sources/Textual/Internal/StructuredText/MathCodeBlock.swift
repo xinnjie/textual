@@ -8,7 +8,7 @@ extension StructuredText {
     private let content: AttributedString
     private let indentationLevel: Int
 
-    init(_ content: AttributedSubstring) {
+    init(_ content: AttributedString) {
       let latex = String(content.characters[...])
         .trimmingCharacters(in: .whitespacesAndNewlines)
       let attachment = MathAttachment(latex: latex, style: .block)
@@ -16,7 +16,7 @@ extension StructuredText {
         "\u{FFFC}",
         attributes: AttributeContainer().attachment(.init(attachment))
       )
-      self.indentationLevel = content.presentationIntent?.indentationLevel ?? 0
+      self.indentationLevel = content.runs.first?.presentationIntent?.indentationLevel ?? 0
     }
 
     var body: some View {
@@ -28,6 +28,7 @@ extension StructuredText {
 
       AnyView(resolvedStyle)
         .layoutValue(key: BlockAlignmentKey.self, value: mathProperties.textAlignment)
+        .preference(key: BlockAlignmentKey.self, value: mathProperties.textAlignment)
     }
 
     private var label: some View {

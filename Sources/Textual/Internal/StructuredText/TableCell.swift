@@ -2,12 +2,13 @@ import SwiftUI
 
 extension StructuredText {
   struct TableCell: View {
+    @Environment(\.textualConfiguration) private var configuration
     @Environment(\.tableCellStyle) private var tableCellStyle
 
-    private let content: AttributedSubstring
+    private let content: AttributedString
     private let identifier: TableCell.Identifier
 
-    init(_ content: AttributedSubstring, row: Int, column: Int) {
+    init(_ content: AttributedString, row: Int, column: Int) {
       self.content = content
       self.identifier = .init(row: row, column: column)
     }
@@ -30,13 +31,15 @@ extension StructuredText {
     }
 
     private var label: some View {
-      WithInlineStyle(AttributedString(content)) {
-        TextFragment($0)
+      WithAttachments(content, configuration: configuration) { content in
+        WithInlineStyle(content) {
+          TextFragment($0)
+        }
       }
     }
 
     private var indentationLevel: Int {
-      content.presentationIntent?.indentationLevel ?? 0
+      content.runs.first?.presentationIntent?.indentationLevel ?? 0
     }
   }
 }

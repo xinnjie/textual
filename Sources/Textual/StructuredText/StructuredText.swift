@@ -135,11 +135,11 @@ public struct StructuredText: View {
   }
 
   public var body: some View {
-    WithAttachments(attributedString, configuration: configuration) {
-      BlockContent(content: $0)
-        .modifier(TextSelectionInteraction())
-        .modifier(TextSelectionCoordination())
-    }
+    BlockContent(content: attributedString)
+      .id(attributedString)
+      .environment(\.textualConfiguration, configuration)
+      .modifier(TextSelectionInteraction())
+      .modifier(TextSelectionCoordination())
     .coordinateSpace(.textContainer)
     .onChange(of: markup, initial: true) {
       markupDidChange(markup)

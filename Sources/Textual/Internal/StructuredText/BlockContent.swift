@@ -16,7 +16,7 @@ extension StructuredText {
       BlockVStack {
         ForEach(runs.indices, id: \.self) { index in
           let run = runs[index]
-          Block(intent: run.intent, content: content[run.range])
+          Block(intent: run.intent, content: AttributedString(content[run.range]))
         }
       }
     }
@@ -25,38 +25,45 @@ extension StructuredText {
 
 extension StructuredText {
   struct Block: View {
-    private let intent: PresentationIntent.IntentType?
-    private let content: AttributedSubstring
+    @Environment(\.textualConfiguration) private var configuration
 
-    init(intent: PresentationIntent.IntentType?, content: AttributedSubstring) {
+    private let intent: PresentationIntent.IntentType?
+    private let content: AttributedString
+
+    init(intent: PresentationIntent.IntentType?, content: AttributedString) {
       self.intent = intent
       self.content = content
     }
 
     var body: some View {
       switch intent?.kind {
-      case .paragraph where content.isMathBlock:
-        MathBlock(content)
-      case .paragraph:
-        Paragraph(content)
-      case .header(let level):
-        Heading(content, level: level)
       case .orderedList:
         OrderedList(intent: intent, content: content)
       case .unorderedList:
         UnorderedList(intent: intent, content: content)
-      case .codeBlock(let languageHint) where languageHint?.lowercased() == "math":
-        MathCodeBlock(content)
-      case .codeBlock(let languageHint):
-        CodeBlock(content, languageHint: languageHint)
       case .blockQuote:
         BlockQuote(intent: intent, content: content)
-      case .thematicBreak:
-        ThematicBreak(content)
       case .table(let columns):
         Table(intent: intent, content: content, columns: columns)
       default:
-        Paragraph(content)
+        WithAttachments(content, configuration: configuration) { content in
+          switch intent?.kind {
+          case .paragraph where content.isMathBlock:
+            MathBlock(content)
+          case .paragraph:
+            Paragraph(content)
+          case .header(let level):
+            Heading(content, level: level)
+          case .codeBlock(let languageHint) where languageHint?.lowercased() == "math":
+            MathCodeBlock(content)
+          case .codeBlock(let languageHint):
+            CodeBlock(content, languageHint: languageHint)
+          case .thematicBreak:
+            ThematicBreak(content)
+          default:
+            Paragraph(content)
+          }
+        }
       }
     }
   }

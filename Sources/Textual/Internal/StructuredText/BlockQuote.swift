@@ -5,9 +5,9 @@ extension StructuredText {
     @Environment(\.blockQuoteStyle) private var blockQuoteStyle
 
     private let intent: PresentationIntent.IntentType?
-    private let content: AttributedSubstring
+    private let content: AttributedString
 
-    init(intent: PresentationIntent.IntentType?, content: AttributedSubstring) {
+    init(intent: PresentationIntent.IntentType?, content: AttributedString) {
       self.intent = intent
       self.content = content
     }

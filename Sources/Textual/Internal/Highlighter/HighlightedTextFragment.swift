@@ -14,12 +14,12 @@ struct HighlightedTextFragment: View {
 
   @State private var model = Model()
 
-  private let content: AttributedSubstring
+  private let content: AttributedString
   private let languageHint: String?
   private let theme: StructuredText.HighlighterTheme
 
   init(
-    _ content: AttributedSubstring,
+    _ content: AttributedString,
     languageHint: String?,
     theme: StructuredText.HighlighterTheme
   ) {
@@ -29,7 +29,7 @@ struct HighlightedTextFragment: View {
   }
 
   var body: some View {
-    TextFragment(model.highlightedCode ?? AttributedString(content))
+    TextFragment(model.highlightedCode ?? content)
       .foregroundStyle(theme.foregroundColor)
       .task(id: content) {
         await model.tokenize(
@@ -40,7 +40,7 @@ struct HighlightedTextFragment: View {
       .onChange(of: Tuple(model.tokens, textEnvironment)) { _, newValue in
         model.highlight(
           tokens: newValue.values.0,
-          presentationIntent: content.presentationIntent,
+          presentationIntent: content.runs.first?.presentationIntent,
           using: theme,
           environment: newValue.values.1
         )
@@ -53,7 +53,7 @@ extension HighlightedTextFragment {
     var tokens: [CodeToken] = []
     var highlightedCode: AttributedString?
 
-    func tokenize(content: AttributedSubstring, languageHint: String?) async {
+    func tokenize(content: AttributedString, languageHint: String?) async {
       let code = String(content.characters[...])
       tokens = [CodeToken(content: code, type: .plain)]
 

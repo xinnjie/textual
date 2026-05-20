@@ -21,6 +21,7 @@ struct ImageView: View {
 
 private struct AnimatedImageView: View {
   @State private var clock: AnimationClock
+  @State private var isVisible = true
 
   private let content: Image
 
@@ -30,15 +31,36 @@ private struct AnimatedImageView: View {
   }
 
   var body: some View {
-    TimelineView(.animation) { context in
-      let index = clock.frameIndex(at: context.date)
-      let frame = content.frames[index].cgImage
+    #if os(watchOS)
+      renderedContent
+        .onChange(of: content) { _, newValue in
+          clock = AnimationClock(image: newValue)
+        }
+    #else
+      renderedContent
+        .onScrollVisibilityChange { isVisible in
+          self.isVisible = isVisible
+        }
+        .onChange(of: content) { _, newValue in
+          clock = AnimationClock(image: newValue)
+        }
+    #endif
+  }
 
-      SwiftUI.Image(decorative: frame, scale: 1.0)
-        .resizable()
-    }
-    .onChange(of: content) { _, newValue in
-      clock = AnimationClock(image: newValue)
+  private var renderedContent: some View {
+    Group {
+      if isVisible {
+        TimelineView(.animation) { context in
+          let index = clock.frameIndex(at: context.date)
+          let frame = content.frames[index].cgImage
+
+          SwiftUI.Image(decorative: frame, scale: 1.0)
+            .resizable()
+        }
+      } else {
+        SwiftUI.Image(decorative: content.cgImage, scale: 1.0)
+          .resizable()
+      }
     }
   }
 }

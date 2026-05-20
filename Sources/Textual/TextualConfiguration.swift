@@ -1,3 +1,5 @@
+import SwiftUI
+
 /// Configuration that controls Textual rendering behavior.
 ///
 /// Pass a configuration to ``InlineText`` or ``StructuredText`` initializers to choose how
@@ -22,4 +24,8 @@ public struct TextualConfiguration: Sendable {
   public static var `default`: Self {
     .init()
   }
+}
+
+extension EnvironmentValues {
+  @Entry var textualConfiguration: TextualConfiguration = .default
 }

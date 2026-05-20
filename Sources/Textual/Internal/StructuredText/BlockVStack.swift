@@ -13,6 +13,9 @@ extension StructuredText {
   struct BlockVStack<Content: View>: View {
     @Environment(\.multilineTextAlignment) private var textAlignment
 
+    @State private var alignments: [Int: TextAlignment] = [:]
+    @State private var spacings: [Int: BlockSpacing] = [:]
+
     private let content: Content
 
     init(@ViewBuilder content: () -> Content) {
@@ -21,19 +24,49 @@ extension StructuredText {
 
     var body: some View {
       Group(subviews: content) { children in
-        BlockVStackLayout(textAlignment: textAlignment) {
-          ForEach(children) {
-            BlockLayoutView($0)
+        LazyVStack(alignment: .leading, spacing: 0) {
+          ForEach(Array(zip(children.indices, children)), id: \.0) { index, child in
+            BlockLayoutView(child, index: index) { index, spacing in
+              spacings[index] = spacing
+            } alignmentChanged: { index, alignment in
+              alignments[index] = alignment
+            }
+            .padding(.top, spacing(before: index))
+            .frame(maxWidth: .infinity, alignment: alignment(for: index))
           }
         }
+      }
+    }
+
+    private func spacing(before index: Int) -> CGFloat {
+      guard index > 0 else { return 0 }
+
+      let previousBottom = spacings[index - 1]?.bottom
+      let currentTop = spacings[index]?.top
+
+      return [previousBottom, currentTop].compactMap(\.self).max() ?? 0
+    }
+
+    private func alignment(for index: Int) -> Alignment {
+      switch alignments[index] ?? textAlignment {
+      case .leading:
+        return .leading
+      case .center:
+        return .center
+      case .trailing:
+        return .trailing
       }
     }
   }
 }
 
 extension StructuredText {
-  struct BlockAlignmentKey: LayoutValueKey {
+  struct BlockAlignmentKey: LayoutValueKey, PreferenceKey {
     static let defaultValue: TextAlignment? = nil
+
+    static func reduce(value: inout TextAlignment?, nextValue: () -> TextAlignment?) {
+      value = nextValue() ?? value
+    }
   }
 
   fileprivate struct BlockLayoutView<Content: View>: View {
@@ -43,98 +76,33 @@ extension StructuredText {
     @State private var blockSpacing = BlockSpacing()
 
     private let content: Content
+    private let index: Int
+    private let alignmentChanged: (Int, TextAlignment?) -> Void
+    private let spacingChanged: (Int, BlockSpacing) -> Void
 
-    init(_ content: Content) {
+    init(
+      _ content: Content,
+      index: Int,
+      spacingChanged: @escaping (Int, BlockSpacing) -> Void,
+      alignmentChanged: @escaping (Int, TextAlignment?) -> Void
+    ) {
       self.content = content
+      self.index = index
+      self.spacingChanged = spacingChanged
+      self.alignmentChanged = alignmentChanged
     }
 
     var body: some View {
-      // Read the block spacing preference and apply it as a layout value
       content
         .onPreferenceChange(BlockSpacingKey.self) { @MainActor value in
-          // Override with the resolved list item spacing if enabled
-          blockSpacing = listItemSpacingEnabled ? resolvedListItemSpacing : value
+          let spacing = listItemSpacingEnabled ? resolvedListItemSpacing : value
+          blockSpacing = spacing
+          spacingChanged(index, spacing)
+        }
+        .onPreferenceChange(BlockAlignmentKey.self) { @MainActor value in
+          alignmentChanged(index, value)
         }
         .layoutValue(key: BlockSpacingKey.self, value: blockSpacing)
-    }
-  }
-
-  fileprivate struct BlockVStackLayout: Layout {
-    struct Cache {
-      let spacings: [CGFloat]
-    }
-
-    let textAlignment: TextAlignment
-
-    func makeCache(subviews: Subviews) -> Cache {
-      return Cache(
-        spacings: subviews.indices.dropLast().map { index in
-          let current = subviews[index]
-          let next = subviews[index + 1]
-          let currentBottom = current[BlockSpacingKey.self].bottom
-          let nextTop = next[BlockSpacingKey.self].top
-
-          // Take the maximum block spacing, otherwise the preferred view spacing
-          return [currentBottom, nextTop].compactMap(\.self).max()
-            ?? current.spacing.distance(to: next.spacing, along: .vertical)
-        }
-      )
-    }
-
-    func sizeThatFits(
-      proposal: ProposedViewSize,
-      subviews: Subviews, cache: inout Cache
-    ) -> CGSize {
-      if let width = proposal.width, width <= 0 {
-        return .zero
-      }
-
-      var size = CGSize.zero
-
-      for view in subviews {
-        let viewSize = view.sizeThatFits(.init(width: proposal.width, height: nil))
-        size.height += viewSize.height
-        size.width = max(size.width, viewSize.width)
-      }
-
-      size.height += cache.spacings.reduce(0, +)
-
-      return size
-    }
-
-    func placeSubviews(
-      in bounds: CGRect,
-      proposal: ProposedViewSize,
-      subviews: Subviews, cache: inout Cache
-    ) {
-      var currentY: CGFloat = 0
-
-      for (index, view) in zip(subviews.indices, subviews) {
-        let viewProposal = ProposedViewSize(width: proposal.width, height: nil)
-        let viewSize = view.sizeThatFits(viewProposal)
-
-        var point = bounds.origin
-        let alignment = view[BlockAlignmentKey.self] ?? textAlignment
-
-        switch alignment {
-        case .leading:
-          break  // do nothing
-        case .center:
-          point.x += (bounds.width - viewSize.width) / 2
-        case .trailing:
-          point.x += bounds.width - viewSize.width
-        }
-
-        point.y += currentY
-
-        view.place(at: point, proposal: viewProposal)
-
-        currentY += viewSize.height
-
-        if index < subviews.count - 1 {
-          currentY += cache.spacings[index]
-        }
-      }
     }
   }
 }
