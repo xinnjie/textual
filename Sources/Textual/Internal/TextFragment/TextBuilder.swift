@@ -93,6 +93,11 @@ extension Text {
         text = text.customAttribute(LinkAttribute(link))
       }
 
+      // Carry the caller's anchor into the layout for TextAnchorReporter
+      if let textAnchor = run.textual.textAnchor {
+        text = text.customAttribute(TextAnchorAttribute(textAnchor))
+      }
+
       return text
     }
 

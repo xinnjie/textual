@@ -30,6 +30,7 @@ applies styling through environment values, and uses SwiftUI's layout system to 
 - **Markdown support** via Foundation's `AttributedString` built-in parser
 - **Custom markup parser support** through the `MarkupParser` protocol
 - **Inline attachments** that flow with the text, such as images and custom emoji
+- **Text anchors** that report where a marked phrase was rendered, so you can place your own views against it
 - **Math expressions** rendered as inline or block attachments
 - **Animated image support** (GIF, APNG, WebP)
 - **Syntax highlighting** with customizable themes
@@ -171,6 +172,52 @@ StructuredText(markdown: content)
 ```
 
 The callback also receives the selection bounds in the interaction view's local coordinate space.
+
+### Text Anchors
+
+Textual lays text out; without help, a caller knows a phrase's range in the attributed content but
+not where that phrase ended up on screen. Mark the spans you need to locate with the
+`textual.textAnchor` attribute, then read their rectangles with `textual.onTextAnchorsChange(_:)`:
+
+```swift
+struct AnnotatedArticle: View {
+  @State private var anchors: [String: [CGRect]] = [:]
+
+  var body: some View {
+    StructuredText(markdown: article, parser: .markdown())
+      .textual.onTextAnchorsChange { anchors = $0 }
+      .overlay(alignment: .topLeading) {
+        ForEach(Array(anchors.keys), id: \.self) { name in
+          if let rect = anchors[name]?.first {
+            Button { open(name) } label: { Image(systemName: "sparkle") }
+              .offset(x: rect.minX, y: rect.minY - 12)
+          }
+        }
+      }
+  }
+}
+```
+
+Anchors are set on the attributed content, usually in a custom `MarkupParser`:
+
+```swift
+struct AnchoringParser: MarkupParser {
+  let phrases: [String: String]  // anchor name -> phrase
+
+  func attributedString(for input: String) throws -> AttributedString {
+    var content = try AttributedStringMarkdownParser.markdown().attributedString(for: input)
+    for (name, phrase) in phrases {
+      guard let range = content.range(of: phrase) else { continue }
+      content[range].textual.textAnchor = name
+    }
+    return content
+  }
+}
+```
+
+Rectangles arrive in the coordinate space of the view that rendered them and are recomputed
+whenever the layout changes. A span that wraps reports one rectangle per line, so the array is
+empty only when the anchor is no longer rendered at all.
 
 ### Styling
 

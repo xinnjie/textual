@@ -175,6 +175,46 @@ extension TextualNamespace where Base: View {
     }
   #endif
 
+  /// Reports where anchored spans are rendered, so you can position your own views against them.
+  ///
+  /// Textual lays text out; without this, a caller knows a phrase's range in the attributed
+  /// content but not where that phrase ended up on screen. Mark the spans you care about with
+  /// ``AttributeScopes/TextualAttributes/TextAnchorAttribute`` and this modifier hands you their
+  /// rectangles, recomputed whenever the layout changes — a different width, a different font
+  /// size, a rewritten paragraph.
+  ///
+  /// Rectangles arrive in the coordinate space of the ``InlineText`` or ``StructuredText`` that
+  /// rendered them, keyed by anchor name. A span that wraps across lines reports one rectangle per
+  /// line, so the array is empty only when the anchor is no longer rendered at all.
+  ///
+  /// ```swift
+  /// struct AnnotatedArticle: View {
+  ///   let content: AttributedString  // spans tagged with `textual.textAnchor`
+  ///   @State private var anchors: [String: [CGRect]] = [:]
+  ///
+  ///   var body: some View {
+  ///     StructuredText(content)
+  ///       .textual.onTextAnchorsChange { anchors = $0 }
+  ///       .overlay(alignment: .topLeading) {
+  ///         ForEach(Array(anchors.keys), id: \.self) { name in
+  ///           if let rect = anchors[name]?.first {
+  ///             Button { open(name) } label: { Image(systemName: "sparkle") }
+  ///               .offset(x: rect.minX, y: rect.minY - 12)
+  ///           }
+  ///         }
+  ///       }
+  ///   }
+  /// }
+  /// ```
+  ///
+  /// Because the reported rectangles drive layout, keep `action` to assigning state. Doing work
+  /// proportional to the number of anchors on every layout pass will show up as scrolling jank.
+  public func onTextAnchorsChange(
+    _ action: @escaping @Sendable ([String: [CGRect]]) -> Void
+  ) -> some View {
+    base.onPreferenceChange(TextAnchorsPreferenceKey.self, perform: action)
+  }
+
   /// Sets the spacing used between table cells in ``StructuredText``.
   public func tableCellSpacing(
     horizontal: CGFloat? = nil,
